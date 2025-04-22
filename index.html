@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Maschinenkarten Viewer</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      background-color: #1e1e1e;
+      color: #f0f0f0;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      position: relative;
+    }
+
+    .progress-container {
+      height: 1px;
+      background-color: #555;
+      width: 100%;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .progress-bar {
+      height: 1px;
+      background-color: #4caf50;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .card-container {
+      display: flex;
+      flex-direction: row;
+      gap: 30px;
+      min-height: 400px;
+    }
+
+    .text-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .image-section {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      background-color: #2b2b2b;
+      border-radius: 8px;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 8px;
+      border: 1px solid #444;
+    }
+
+    h2 {
+      margin: 0;
+      padding-bottom: 10px;
+    }
+
+    p {
+      color: #ccc;
+      margin: 0;
+    }
+
+    .warning {
+      background-color: #3b0000;
+      border-left: 5px solid #ff4d4d;
+      padding: 10px;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #ff8080;
+      min-height: 60px;
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .warning.hidden {
+      visibility: hidden;
+      opacity: 0;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #444;
+    }
+
+    .page-indicator {
+      font-size: 14px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fortschrittsbalken ganz oben -->
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Kartenbereich -->
+  <div class="card-container">
+    <div class="text-section">
+      <h2 id="title">Titel</h2>
+      <p id="maintext">Beschreibung...</p>
+      <div id="warning" class="warning">⚠️ Warnung</div>
+    </div>
+    <div class="image-section">
+      <img id="media" src="" alt="Bild zur Karte">
+    </div>
+  </div>
+
+  <!-- Steuerung -->
+  <div class="controls">
+    <div>
+      <button onclick="prevCard()">Zurück</button>
+      <button onclick="nextCard()">Weiter</button>
+    </div>
+    <div class="page-indicator" id="pageIndicator">0 / 0</div>
+  </div>
+
+  <script>
+    const cards = [];
+    let currentIndex = 0;
+
+    async function loadJSON() {
+      const response = await fetch('9oEq.json');
+      const data = await response.json();
+      cards.push(...data);
+      showCard(0);
+    }
+
+    function showCard(index) {
+      const card = cards[index];
+
+      // Inhalte setzen
+      document.getElementById("title").textContent = `${card.CardNumber}. ${card.Titel}`;
+      document.getElementById("maintext").textContent = card.Maintext;
+
+      // Warnung anzeigen oder verstecken
+      const warningEl = document.getElementById("warning");
+      if (card.Warning && card.Warning.toLowerCase() !== "none") {
+        warningEl.classList.remove("hidden");
+        warningEl.textContent = "⚠️ " + card.Warning;
+      } else {
+        warningEl.classList.add("hidden");
+        warningEl.textContent = "";
+      }
+
+      // Bild anzeigen oder ausblenden
+      const mediaEl = document.getElementById("media");
+      if (card.Media && card.Media.toLowerCase() !== "none" && card.Media.startsWith("data:image")) {
+        mediaEl.style.visibility = "visible";
+        mediaEl.style.opacity = "1";
+        mediaEl.src = card.Media;
+      } else {
+        mediaEl.style.visibility = "hidden";
+        mediaEl.style.opacity = "0";
+        mediaEl.src = "";
+      }
+
+      // Fortschrittsbalken aktualisieren
+      updateProgress();
+
+      // Seitenanzeige aktualisieren
+      document.getElementById("pageIndicator").textContent = `${currentIndex + 1} / ${cards.length}`;
+    }
+
+    function nextCard() {
+      if (currentIndex < cards.length - 1) {
+        currentIndex++;
+        showCard(currentIndex);
+      }
+    }
+
+    function prevCard() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        showCard(currentIndex);
+      }
+    }
+
+    function updateProgress() {
+      const progressEl = document.getElementById("progressBar");
+      const percent = ((currentIndex + 1) / cards.length) * 100;
+      progressEl.style.width = percent + "%";
+    }
+
+    function resetToFirstCard() {
+      currentIndex = 0;
+      showCard(currentIndex);
+    }
+
+    // Tastatur-Navigation
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight") {
+        nextCard();
+      } else if (e.key === "ArrowLeft") {
+        prevCard();
+      } else if (e.key.toLowerCase() === "r") {
+        resetToFirstCard();
+      }
+    });
+
+    loadJSON();
+  </script>
+</body>
+</html>
