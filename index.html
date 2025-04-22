@@ -3,6 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Maschinenkarten Viewer</title>
+
+  <!-- JSON Datei vorladen -->
+  <link rel="preload" href="9oEq.json" as="fetch" type="application/json" crossorigin="anonymous">
+  <script>
+    // Frühzeitig JSON laden und als Promise speichern
+    window.preloadedData = fetch('9oEq.json')
+      .then(response => response.json());
+  </script>
+
   <style>
     body {
       font-family: sans-serif;
@@ -152,8 +161,8 @@
     let currentIndex = 0;
 
     async function loadJSON() {
-      const response = await fetch('9oEq.json');
-      const data = await response.json();
+      // Verwende die vorab geladene JSON-Datei
+      const data = await window.preloadedData;
       cards.push(...data);
       showCard(0);
     }
@@ -161,11 +170,9 @@
     function showCard(index) {
       const card = cards[index];
 
-      // Inhalte setzen
       document.getElementById("title").textContent = `${card.CardNumber}. ${card.Titel}`;
       document.getElementById("maintext").textContent = card.Maintext;
 
-      // Warnung anzeigen oder verstecken
       const warningEl = document.getElementById("warning");
       if (card.Warning && card.Warning.toLowerCase() !== "none") {
         warningEl.classList.remove("hidden");
@@ -175,7 +182,6 @@
         warningEl.textContent = "";
       }
 
-      // Bild anzeigen oder ausblenden
       const mediaEl = document.getElementById("media");
       if (card.Media && card.Media.toLowerCase() !== "none" && card.Media.startsWith("data:image")) {
         mediaEl.style.visibility = "visible";
@@ -187,10 +193,7 @@
         mediaEl.src = "";
       }
 
-      // Fortschrittsbalken aktualisieren
       updateProgress();
-
-      // Seitenanzeige aktualisieren
       document.getElementById("pageIndicator").textContent = `${currentIndex + 1} / ${cards.length}`;
     }
 
@@ -219,7 +222,6 @@
       showCard(currentIndex);
     }
 
-    // Tastatur-Navigation
     document.addEventListener("keydown", (e) => {
       if (e.key === "ArrowRight") {
         nextCard();
@@ -230,7 +232,9 @@
       }
     });
 
+    // Jetzt laden wir die Daten (die schon preloaded wurden)
     loadJSON();
   </script>
+
 </body>
 </html>
